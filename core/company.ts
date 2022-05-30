@@ -25,7 +25,7 @@ export interface IPosition {
     year: number;
     term: Season;
     positionType: string;
-    interviews: IInterview[];
+    interviews?: IInterview[];
 }
 
 export interface ICompany {

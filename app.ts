@@ -35,13 +35,30 @@ const testPosition: IPosition = {
 
 const posArray: Array<IPosition> = [testPosition]
 
+// connect to mongo db
+mongoose.connect(process.env.MONGO_URI!);
 
 
 // define mongo schema
 const companySchema = new Schema<ICompany>({
-  companyName: {type: String, required: true},
+  companyName: {type: String, required: true, unique: true, dropDups: true},
   headquarterLocation: {type: String, required: true},
   currentPositions: [
+    {year: Number,
+    term: Number,
+    positionType: String,
+    interviews: [{
+      numberRounds: Number,
+      interviewType: [String],
+      offer: Boolean,
+      offerInfo: {
+        pay: Number,
+        bonus: Number,
+        otherComp: String,
+      }
+    }]
+  }],
+  pastPositions: [
     {year: Number,
     term: Number,
     positionType: String,
@@ -62,22 +79,74 @@ const companySchema = new Schema<ICompany>({
 // mongo model
 const companyModel = mongoose.model<ICompany>("Company", companySchema);
 
-app.get('/', async (request: Request, response: Response) => {
-    const db = await mongoose.connect(process.env.MONGO_URI!);
+// endpoint to add an empty company, interviews and offers inserted at other end points
+// requires companyName and headquarterLocation
+app.post('/addCompany', async(req: Request, res: Response) => {
+  // validate input params
+  if (req.body.companyName === undefined || req.body.headquarterLocation === undefined) {
+    console.log("Recieved invalid. Recieved:");
+    console.log(req.body);
+    return res.status(400).send("Invalid Parameters");
+  }
+  // create company interface instance
+  const newCompanyData: ICompany = {
+    companyName: req.body.companyName,
+    headquarterLocation: req.body.headquarterLocation,
+  }
+  
+  // create model to be inserted
+  const newCompany = new companyModel(newCompanyData);
 
-    const company = new companyModel({
-      companyName: "Amazon",
-      headquarterLocation: "San Francisco",
-      currentPositions: posArray
-    });
+  // save to db
+  try {
+    await newCompany.save()
+  } 
+  catch (err) {
+    // catch error
+    console.log(err)
+    return res.status(400).send("Error adding to Database. Company may already Exist!");
+  }
 
-    await company.save();
-    
-    response.send(testPosition);
+  console.log("Company Added");
+  // return 200 if all good
+  return res.status(200).send("Company Added");
+});
+
+// add position to a company
+// params: companyName, year, term(1 = Spring, 2 = summer, 3 = fall, 4 = winter), and position type
+app.post('/addPosition', async (req: Request, res: Response) => {
+  // validate req body
+  if (req.body.companyName === undefined || req.body.year === undefined || req.body.term === undefined || req.body.positionType === undefined) {
+    console.log("Recieved invalid. Recieved:");
+    console.log(req.body);
+    return res.status(400).send("Invalid Parameters");
+  }
+  console.log(req.body)
+  // company to query 
+  const company = { "companyName": req.body.companyName };
+
+  // create position interface instance
+  const newPositionData: IPosition = {
+    year: req.body.year,
+    term: req.body.term,
+    positionType: req.body.positionType
+  }
+
+  let result = await companyModel.findOneAndUpdate(company, {$push: {"currentPositions": newPositionData}});
+
+  // make sure position was added
+  if (result === null) {
+    console.log("Position Not Added")
+    return res.status(406).send("Position Not Added! Company name may be invalid.")
+  }
+  
+  console.log("Position Added")
+  return res.status(200).send("Position Added");
 })
 
-// endpoint to add an empty company, interviews and offers inserted at other end points
-// requires companyName and headquartersLocation
+
+
+
 
 
 // listen on assigned port, or port 5000 if local
