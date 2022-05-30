@@ -1,40 +1,83 @@
 import express, {Request, Response} from 'express';
-import { Offer, Position, Interview, Season } from './core/company';
+import { IOffer, IPosition, IInterview, ICompany, Season } from './core/company';
+import mongoose from 'mongoose';
+require("dotenv").config();
+const { Schema } = mongoose;
 
 // setup app
 const app = express();
 app.use(express.json());
 
 
-const testOffer: Offer = {
-  offerID: 10101,
+const testOffer: IOffer = {
   pay: 45,
   bonus: 10000,
   otherComp: "None"
 }
 
-const offerArray: Array<Offer> = [testOffer];
+const offerArray: Array<IOffer> = [testOffer];
 
-const testInterview: Interview = {
-  interviewID: 12,
+const testInterview: IInterview = {
   numberRounds: 2,
   interviewType: ["Technical", "Personal"],
   offer: true,
   offerInfo: testOffer
 }
 
-const interviewArray: Array<Interview> = [testInterview];
+const interviewArray: Array<IInterview> = [testInterview];
 
-const testPosition: Position = {
-  positionID: 1,
+const testPosition: IPosition = {
   year: 2022,
   term: Season.Summer,
   positionType: "SWE",
   interviews: interviewArray
 }
-app.get('/', (request: Request, response: Response) => {
+
+const posArray: Array<IPosition> = [testPosition]
+
+
+
+// define mongo schema
+const companySchema = new Schema<ICompany>({
+  companyName: {type: String, required: true},
+  headquarterLocation: {type: String, required: true},
+  currentPositions: [
+    {year: Number,
+    term: Number,
+    positionType: String,
+    interviews: [{
+      numberRounds: Number,
+      interviewType: [String],
+      offer: Boolean,
+      offerInfo: {
+        pay: Number,
+        bonus: Number,
+        otherComp: String,
+      }
+    }]
+  }]
+}, { collection: "companies"});
+
+
+// mongo model
+const companyModel = mongoose.model<ICompany>("Company", companySchema);
+
+app.get('/', async (request: Request, response: Response) => {
+    const db = await mongoose.connect(process.env.MONGO_URI!);
+
+    const company = new companyModel({
+      companyName: "Amazon",
+      headquarterLocation: "San Francisco",
+      currentPositions: posArray
+    });
+
+    await company.save();
+    
     response.send(testPosition);
 })
+
+// endpoint to add an empty company, interviews and offers inserted at other end points
+// requires companyName and headquartersLocation
 
 
 // listen on assigned port, or port 5000 if local

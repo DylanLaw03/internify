@@ -8,32 +8,30 @@ export enum Season {
     Winter = 4
 }
 
-export interface Offer {
-    offerID: number;
+export interface IOffer {
     pay: number;
     bonus: number;
     otherComp: string;
 }
 
-export interface Interview {
-    interviewID: number;
+export interface IInterview {
     numberRounds: number;
     interviewType: string[];
     offer: boolean;
-    offerInfo?: Offer;
+    offerInfo?: IOffer;
 }
 
-export interface Position {
-    positionID: number;
+export interface IPosition {
     year: number;
     term: Season;
     positionType: string;
-    interviews: Interview[];
+    interviews: IInterview[];
 }
 
-export interface Company {
-    companyID: number,
+export interface ICompany {
+    companyName: string;
     headquarterLocation: string;
-    currentPositions: Position[],
-    pastPositions: Position[]
+    currentPositions?: IPosition[],
+    pastPositions?: IPosition[]
 }
+
