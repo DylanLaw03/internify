@@ -2,44 +2,16 @@ import express, {Request, Response} from 'express';
 import { IOffer, IPosition, IInterview, ICompany, Season } from './core/company';
 import mongoose from 'mongoose';
 require("dotenv").config();
-const { Schema } = mongoose;
+const { Schema, Types } = mongoose;
 
 // setup app
 const app = express();
 app.use(express.json());
 
-
-const testOffer: IOffer = {
-  pay: 45,
-  bonus: 10000,
-  otherComp: "None"
-}
-
-const offerArray: Array<IOffer> = [testOffer];
-
-const testInterview: IInterview = {
-  numberRounds: 2,
-  interviewType: ["Technical", "Personal"],
-  offer: true,
-  offerInfo: testOffer
-}
-
-const interviewArray: Array<IInterview> = [testInterview];
-
-const testPosition: IPosition = {
-  year: 2022,
-  term: Season.Summer,
-  positionType: "SWE",
-  interviews: interviewArray
-}
-
-const posArray: Array<IPosition> = [testPosition]
-
 // connect to mongo db
 mongoose.connect(process.env.MONGO_URI!);
 
-
-// define mongo schema
+// define mongo schemas
 const companySchema = new Schema<ICompany>({
   companyName: {type: String, required: true, unique: true, dropDups: true},
   headquarterLocation: {type: String, required: true},
@@ -47,37 +19,26 @@ const companySchema = new Schema<ICompany>({
     {year: Number,
     term: Number,
     positionType: String,
-    interviews: [{
-      numberRounds: Number,
-      interviewType: [String],
-      offer: Boolean,
-      offerInfo: {
-        pay: Number,
-        bonus: Number,
-        otherComp: String,
-      }
-    }]
   }],
   pastPositions: [
     {year: Number,
     term: Number,
-    positionType: String,
-    interviews: [{
-      numberRounds: Number,
-      interviewType: [String],
-      offer: Boolean,
-      offerInfo: {
-        pay: Number,
-        bonus: Number,
-        otherComp: String,
-      }
-    }]
+    positionType: String
   }]
 }, { collection: "companies"});
 
+const interviewSchema = new Schema<IInterview>({
+  companyName: {type: String, required: true},
+  position: {type: Schema.Types.ObjectId, required: true},
+  numberRounds: Number,
+  interviewType: [String],
+  offer: Boolean
+})
 
-// mongo model
+
+// mongo models
 const companyModel = mongoose.model<ICompany>("Company", companySchema);
+const inteviewModel = mongoose.model<IInterview>("Interview", interviewSchema);
 
 // endpoint to add an empty company, interviews and offers inserted at other end points
 // requires companyName and headquarterLocation
@@ -113,15 +74,23 @@ app.post('/addCompany', async(req: Request, res: Response) => {
 });
 
 // add position to a company
-// params: companyName, year, term(1 = Spring, 2 = summer, 3 = fall, 4 = winter), and position type
+// params: companyName, year, term(1 = Spring, 2 = summer, 3 = fall, 4 = winter), and position type, and current("current", or "past")
 app.post('/addPosition', async (req: Request, res: Response) => {
+
   // validate req body
   if (req.body.companyName === undefined || req.body.year === undefined || req.body.term === undefined || req.body.positionType === undefined) {
     console.log("Recieved invalid. Recieved:");
     console.log(req.body);
     return res.status(400).send("Invalid Parameters");
   }
-  console.log(req.body)
+
+  // make sure current is correct
+  if (req.body.current !== "current" && req.body.current !== "past") {
+    console.log("Invalid current param");
+    console.log(req.body);
+    return res.status(400).send("Invalid parameter value for current.")
+  }
+
   // company to query 
   const company = { "companyName": req.body.companyName };
 
@@ -132,7 +101,15 @@ app.post('/addPosition', async (req: Request, res: Response) => {
     positionType: req.body.positionType
   }
 
-  let result = await companyModel.findOneAndUpdate(company, {$push: {"currentPositions": newPositionData}});
+  // inset into db
+  let result;
+  
+  if (req.body.current === 'current') {
+    result = await companyModel.findOneAndUpdate(company, {$push: {"currentPositions": newPositionData}});
+  } 
+  else if (req.body.current === 'past') {
+    result = await companyModel.findOneAndUpdate(company, {$push: {"pastPositions": newPositionData}});
+  }
 
   // make sure position was added
   if (result === null) {
@@ -142,10 +119,42 @@ app.post('/addPosition', async (req: Request, res: Response) => {
   
   console.log("Position Added")
   return res.status(200).send("Position Added");
+});
+
+// add interview to a company
+// params: companyName, positionId(ObjectID), numberRounds, interviewType[String], offer(Bool)
+app.post("/addInterview", async(req: Request, res: Response) => {
+  // validate input
+  if (req.body.company === undefined || req.body.positionId === undefined || req.body.numberRounds === undefined, req.body.interviewType === undefined || req.body.offer === undefined) {
+    console.log("Recieved invalid. Recieved:");
+    console.log(req.body);
+    return res.status(400).send("Invalid Parameters");
+  }
+
+  // new interview
+  const newInterviewData: IInterview = {
+    companyName: req.body.companyName,
+    position: req.body.positionId,
+    numberRounds: req.body.numberRounds,
+    interviewType: req.body.interviewType,
+    offer: req.body.offer
+  };
+
+  // create model and save interview
+  const newInterview = new inteviewModel(newInterviewData);
+
+  try {
+    await newInterview.save();
+  }
+  catch (error) {
+    // catch any errors
+    console.log("Error adding Interview");
+    console.log(error);
+    return res.status(400).send("Error adding Interview");
+  }
+  // done, send res.
+  return res.status(200).send("Interview Successfully Added")
 })
-
-
-
 
 
 

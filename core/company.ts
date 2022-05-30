@@ -1,5 +1,7 @@
 // Company Interface, and related interface
 
+import { ObjectId } from "mongoose";
+
 // enum for seasons
 export enum Season {
     Spring = 1,
@@ -15,6 +17,8 @@ export interface IOffer {
 }
 
 export interface IInterview {
+    companyName: string,
+    position: ObjectId,
     numberRounds: number;
     interviewType: string[];
     offer: boolean;
