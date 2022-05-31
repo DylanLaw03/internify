@@ -17,8 +17,8 @@ export interface IOffer {
 }
 
 export interface IInterview {
-    companyName: string,
     position: ObjectId,
+    companyName: string,
     numberRounds: number;
     interviewType: string[];
     offer: boolean;

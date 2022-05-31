@@ -32,13 +32,18 @@ const interviewSchema = new Schema<IInterview>({
   position: {type: Schema.Types.ObjectId, required: true},
   numberRounds: Number,
   interviewType: [String],
-  offer: Boolean
-})
+  offer: {
+    pay: Number,
+    bonus: Number,
+    otherComp: String
+  }  
+}, {collection: "interviews"});
+
 
 
 // mongo models
 const companyModel = mongoose.model<ICompany>("Company", companySchema);
-const inteviewModel = mongoose.model<IInterview>("Interview", interviewSchema);
+const interviewModel = mongoose.model<IInterview>("Interview", interviewSchema);
 
 // endpoint to add an empty company, interviews and offers inserted at other end points
 // requires companyName and headquarterLocation
@@ -122,10 +127,10 @@ app.post('/addPosition', async (req: Request, res: Response) => {
 });
 
 // add interview to a company
-// params: companyName, positionId(ObjectID), numberRounds, interviewType[String], offer(Bool)
+// params: companyName, position(ObjectID), numberRounds, interviewType[String], offer(Bool)
 app.post("/addInterview", async(req: Request, res: Response) => {
   // validate input
-  if (req.body.company === undefined || req.body.positionId === undefined || req.body.numberRounds === undefined, req.body.interviewType === undefined || req.body.offer === undefined) {
+  if (req.body.company === undefined || req.body.position === undefined || req.body.numberRounds === undefined, req.body.interviewType === undefined || req.body.offer === undefined) {
     console.log("Recieved invalid. Recieved:");
     console.log(req.body);
     return res.status(400).send("Invalid Parameters");
@@ -134,14 +139,14 @@ app.post("/addInterview", async(req: Request, res: Response) => {
   // new interview
   const newInterviewData: IInterview = {
     companyName: req.body.companyName,
-    position: req.body.positionId,
+    position: req.body.position,
     numberRounds: req.body.numberRounds,
     interviewType: req.body.interviewType,
     offer: req.body.offer
   };
 
   // create model and save interview
-  const newInterview = new inteviewModel(newInterviewData);
+  const newInterview = new interviewModel(newInterviewData);
 
   try {
     await newInterview.save();
@@ -154,6 +159,40 @@ app.post("/addInterview", async(req: Request, res: Response) => {
   }
   // done, send res.
   return res.status(200).send("Interview Successfully Added")
+});
+
+// end point to add an offer
+// params: interview(ObjectID), pay, bonus, otherComp
+app.post("/addOffer", async(req: Request, res: Response) => {
+  // validate request
+  if (req.body.interview === undefined || req.body.pay === undefined, req.body.bonus === undefined || req.body.otherComp === undefined) {
+    console.log("Recieved invalid. Recieved:");
+    console.log(req.body);
+    return res.status(400).send("Invalid Parameters");
+  }
+
+  // create offer interface instance
+  const newOfferData: IOffer = {
+    pay: req.body.pay,
+    bonus: req.body.bonus,
+    otherComp: req.body.otherComp
+  };
+  
+  // interview id
+  const interview = req.body.interview;
+  // find interview and add offer
+  try {
+    await interviewModel.findOneAndUpdate({interview}, {"offer": newOfferData});
+  }
+  catch (error) {
+    // catch any errors
+    console.log("Error adding Interview");
+    console.log(error);
+    return res.status(400).send("Error adding Interview");
+  }
+
+  // all set, return status 200
+  return res.status(200).send("Offer successfully added");
 })
 
 
