@@ -1,8 +1,8 @@
 import express, {Request, Response} from 'express';
-import { IOffer, IPosition, IInterview, ICompany, Season } from './core/company';
 import mongoose from 'mongoose';
+import { createCompany, addPosition, addInterview, setOffer, updateCompany } from './core/endpoints';
 require("dotenv").config();
-const { Schema, Types } = mongoose;
+
 
 // setup app
 const app = express();
@@ -11,188 +11,34 @@ app.use(express.json());
 // connect to mongo db
 mongoose.connect(process.env.MONGO_URI!);
 
-// define mongo schemas
-const companySchema = new Schema<ICompany>({
-  companyName: {type: String, required: true, unique: true, dropDups: true},
-  headquarterLocation: {type: String, required: true},
-  currentPositions: [
-    {year: Number,
-    term: Number,
-    positionType: String,
-  }],
-  pastPositions: [
-    {year: Number,
-    term: Number,
-    positionType: String
-  }]
-}, { collection: "companies"});
-
-const interviewSchema = new Schema<IInterview>({
-  companyName: {type: String, required: true},
-  position: {type: Schema.Types.ObjectId, required: true},
-  numberRounds: Number,
-  interviewType: [String],
-  offer: {
-    pay: Number,
-    bonus: Number,
-    otherComp: String
-  }  
-}, {collection: "interviews"});
-
-
-
-// mongo models
-const companyModel = mongoose.model<ICompany>("Company", companySchema);
-const interviewModel = mongoose.model<IInterview>("Interview", interviewSchema);
-
 // endpoint to add an empty company, interviews and offers inserted at other end points
 // requires companyName and headquarterLocation
 app.post('/addCompany', async(req: Request, res: Response) => {
-  // validate input params
-  if (req.body.companyName === undefined || req.body.headquarterLocation === undefined) {
-    console.log("Recieved invalid. Recieved:");
-    console.log(req.body);
-    return res.status(400).send("Invalid Parameters");
-  }
-  // create company interface instance
-  const newCompanyData: ICompany = {
-    companyName: req.body.companyName,
-    headquarterLocation: req.body.headquarterLocation,
-  }
-  
-  // create model to be inserted
-  const newCompany = new companyModel(newCompanyData);
-
-  // save to db
-  try {
-    await newCompany.save()
-  } 
-  catch (err) {
-    // catch error
-    console.log(err)
-    return res.status(400).send("Error adding to Database. Company may already Exist!");
-  }
-
-  console.log("Company Added");
-  // return 200 if all good
-  return res.status(200).send("Company Added");
+  return await createCompany(req, res);
 });
 
 // add position to a company
-// params: companyName, year, term(1 = Spring, 2 = summer, 3 = fall, 4 = winter), and position type, and current("current", or "past")
+// params: companyID (ObjectID), year, term(1 = Spring, 2 = summer, 3 = fall, 4 = winter), and position type, and currentlyOpen(true or false)
 app.post('/addPosition', async (req: Request, res: Response) => {
-
-  // validate req body
-  if (req.body.companyName === undefined || req.body.year === undefined || req.body.term === undefined || req.body.positionType === undefined) {
-    console.log("Recieved invalid. Recieved:");
-    console.log(req.body);
-    return res.status(400).send("Invalid Parameters");
-  }
-
-  // make sure current is correct
-  if (req.body.current !== "current" && req.body.current !== "past") {
-    console.log("Invalid current param");
-    console.log(req.body);
-    return res.status(400).send("Invalid parameter value for current.")
-  }
-
-  // company to query 
-  const company = { "companyName": req.body.companyName };
-
-  // create position interface instance
-  const newPositionData: IPosition = {
-    year: req.body.year,
-    term: req.body.term,
-    positionType: req.body.positionType
-  }
-
-  // inset into db
-  let result;
-  
-  if (req.body.current === 'current') {
-    result = await companyModel.findOneAndUpdate(company, {$push: {"currentPositions": newPositionData}});
-  } 
-  else if (req.body.current === 'past') {
-    result = await companyModel.findOneAndUpdate(company, {$push: {"pastPositions": newPositionData}});
-  }
-
-  // make sure position was added
-  if (result === null) {
-    console.log("Position Not Added")
-    return res.status(406).send("Position Not Added! Company name may be invalid.")
-  }
-  
-  console.log("Position Added")
-  return res.status(200).send("Position Added");
+  return await addPosition(req, res);
 });
 
 // add interview to a company
-// params: companyName, position(ObjectID), numberRounds, interviewType[String], offer(Bool)
-app.post("/addInterview", async(req: Request, res: Response) => {
-  // validate input
-  if (req.body.company === undefined || req.body.position === undefined || req.body.numberRounds === undefined, req.body.interviewType === undefined || req.body.offer === undefined) {
-    console.log("Recieved invalid. Recieved:");
-    console.log(req.body);
-    return res.status(400).send("Invalid Parameters");
-  }
-
-  // new interview
-  const newInterviewData: IInterview = {
-    companyName: req.body.companyName,
-    position: req.body.position,
-    numberRounds: req.body.numberRounds,
-    interviewType: req.body.interviewType,
-    offer: req.body.offer
-  };
-
-  // create model and save interview
-  const newInterview = new interviewModel(newInterviewData);
-
-  try {
-    await newInterview.save();
-  }
-  catch (error) {
-    // catch any errors
-    console.log("Error adding Interview");
-    console.log(error);
-    return res.status(400).send("Error adding Interview");
-  }
-  // done, send res.
-  return res.status(200).send("Interview Successfully Added")
+// params: companyName, positionID(ObjectID), numberRounds, interviewType[String], offer(Bool)
+app.post('/addInterview', async(req: Request, res: Response) => {
+  return await addInterview(req, res);
 });
 
-// end point to add an offer
+// end point to set an offer for an interview
 // params: interview(ObjectID), pay, bonus, otherComp
-app.post("/addOffer", async(req: Request, res: Response) => {
-  // validate request
-  if (req.body.interview === undefined || req.body.pay === undefined, req.body.bonus === undefined || req.body.otherComp === undefined) {
-    console.log("Recieved invalid. Recieved:");
-    console.log(req.body);
-    return res.status(400).send("Invalid Parameters");
-  }
+app.post('/setOffer', async(req: Request, res: Response) => {
+  return await setOffer(req, res);
+});
 
-  // create offer interface instance
-  const newOfferData: IOffer = {
-    pay: req.body.pay,
-    bonus: req.body.bonus,
-    otherComp: req.body.otherComp
-  };
-  
-  // interview id
-  const interview = req.body.interview;
-  // find interview and add offer
-  try {
-    await interviewModel.findOneAndUpdate({interview}, {"offer": newOfferData});
-  }
-  catch (error) {
-    // catch any errors
-    console.log("Error adding Interview");
-    console.log(error);
-    return res.status(400).send("Error adding Interview");
-  }
-
-  // all set, return status 200
-  return res.status(200).send("Offer successfully added");
+// end point to update company
+// params: required: companyID, optional(must have one): companyName, headquarterLocation
+app.post('/updateCompany', async(req: Request, res: Response) => {
+  return await updateCompany(req, res);
 })
 
 

@@ -17,8 +17,7 @@ export interface IOffer {
 }
 
 export interface IInterview {
-    position: ObjectId,
-    companyName: string,
+    positionID: ObjectId,
     numberRounds: number;
     interviewType: string[];
     offer: boolean;
@@ -26,10 +25,11 @@ export interface IInterview {
 }
 
 export interface IPosition {
+    companyID: ObjectId,
     year: number;
     term: Season;
     positionType: string;
-    interviews?: IInterview[];
+    currentlyOpen: boolean
 }
 
 export interface ICompany {
