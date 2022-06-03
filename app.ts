@@ -1,5 +1,6 @@
 import express, {Request, Response} from 'express';
 import mongoose from 'mongoose';
+const cors = require('cors');
 import { createCompany, addPosition, addInterview, setOffer, updateCompany, updatePosition, updateInterview, deleteCompany, deletePosition, deleteInterview, getCompanies, getPositions, getInterviews } from './core/company-endpoints';
 require("dotenv").config();
 
@@ -8,6 +9,9 @@ require("dotenv").config();
 const app = express();
 app.use(express.json());
 
+
+//setup cors
+app.use(cors());
 // connect to mongo db
 mongoose.connect(process.env.MONGO_URI!);
 
