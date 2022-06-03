@@ -286,4 +286,57 @@ export const updateInterview = async(req: Request, res: Response) => {
     return res.status(200).send("Interview successfully updated")
 }
 
-// 
+// delete company, requires companyID
+export const deleteCompany = async(req: Request, res: Response) => {
+    // verify req
+    if (req.body.companyID === undefined) {
+        console.log("CompanyID is empty");
+        return res.status(400).send("companyID cannot be empty");
+    }
+    
+    try{
+        await companyModel.deleteOne({_id: req.body.companyID});
+    }
+    catch (error) {
+        console.log(error);
+        return res.status(400).send("Error: could not delete company")
+    }
+    return res.status(200).send("Company successfully deleted")
+}
+
+// delete position, requires positionID
+export const deletePosition = async(req: Request, res: Response) => {
+    // verify req
+    if (req.body.positionID === undefined) {
+        console.log("positionID is empty");
+        return res.status(400).send("positionID cannot be empty");
+    }
+    
+    try{
+        await positionModel.deleteOne({_id: req.body.positionID});
+    }
+    catch (error) {
+        console.log(error);
+        return res.status(400).send("Error: could not delete position")
+    }
+    return res.status(200).send("Position successfully deleted")
+}
+
+// delete interview, requires interviewID
+export const deleteInterview = async(req: Request, res: Response) => {
+    // verify req
+    if (req.body.interviewID === undefined) {
+        console.log("interviewID is empty");
+        return res.status(400).send("interviewID cannot be empty");
+    }
+    
+    try{
+        await interviewModel.deleteOne({_id: req.body.interviewID});
+    }
+    catch (error) {
+        console.log(error);
+        return res.status(400).send("Error: could not delete interview")
+    }
+    return res.status(200).send("Interview successfully deleted")
+}
+
