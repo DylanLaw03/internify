@@ -196,5 +196,94 @@ export const updateCompany = async(req: Request, res: Response) => {
         return res.status(400).send("Error saving updated company");
     }
 
-    return res.status(200).send("Company successfully updated!")
+    return res.status(200).send("Company successfully updated")
 }
+
+// requires positionID, optional(must have one )year, term(1 = Spring, 2 = summer, 3 = fall, 4 = winter), positionType, currentlyOpen(true or false)
+export const updatePosition = async(req: Request, res: Response) => {
+    // verify something is being updated
+    if (req.body.positionID === undefined && req.body.year === undefined && req.body.term === undefined && req.body.positionType === undefined && req.body.currentlyOpen === undefined) {
+        console.log("Invalid Request. Nothing to update");
+        return res.status(400).send("You must enter a value to update");
+    }
+
+    // get position
+    let position = await positionModel.findById(req.body.positionID);
+
+    // if position not found, return that
+    if (position === null) {
+        console.log("Position not found");
+        return res.status(400).send("Error: Position not found")
+    }
+
+    // now update new values
+    if (req.body.year !== undefined) {
+        position.year = req.body.year;
+    }
+
+    if (req.body.term !== undefined) {
+        position.term = req.body.term;
+    }
+
+    if (req.body.positionType !== undefined) {
+        position.positionType = req.body.positionType;
+    }
+
+    if (req.body.currentlyOpen !== undefined) {
+        position.currentlyOpen = req.body.currentlyOpen;
+    }
+
+
+    // save position
+    try {
+        await position.save();
+    }
+    catch (error) {
+        console.log(error);
+        return res.status(400).send("Error saving updated position");
+    }
+
+    return res.status(200).send("Position successfully updated")
+}
+
+
+// requires interviewID, optional(must have one )numberRounds, interviewType[String]
+export const updateInterview = async(req: Request, res: Response) => {
+    // verify something is being updated
+    if (req.body.interviewID === undefined && req.body.numberRounds === undefined && req.body.interviewType === undefined) {
+        console.log("Invalid Request. Nothing to update");
+        return res.status(400).send("You must enter a value to update");
+    }
+
+    // get position
+    let interview = await interviewModel.findById(req.body.interviewID);
+
+    // if position not found, return that
+    if (interview === null) {
+        console.log("Interview not found");
+        return res.status(400).send("Error: Interview not found")
+    }
+
+    // now update new values
+    if (req.body.numberRounds !== undefined) {
+        interview.numberRounds = req.body.numberRounds;
+    }
+
+    if (req.body.interviewType !== undefined) {
+        interview.interviewType = req.body.interviewType;
+    }
+
+
+    // save position
+    try {
+        await interview.save();
+    }
+    catch (error) {
+        console.log(error);
+        return res.status(400).send("Error saving updated interview");
+    }
+
+    return res.status(200).send("Interview successfully updated")
+}
+
+// 

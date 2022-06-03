@@ -1,6 +1,6 @@
 import express, {Request, Response} from 'express';
 import mongoose from 'mongoose';
-import { createCompany, addPosition, addInterview, setOffer, updateCompany } from './core/endpoints';
+import { createCompany, addPosition, addInterview, setOffer, updateCompany, updatePosition, updateInterview } from './core/company-endpoints';
 require("dotenv").config();
 
 
@@ -24,23 +24,32 @@ app.post('/addPosition', async (req: Request, res: Response) => {
 });
 
 // add interview to a company
-// params: companyName, positionID(ObjectID), numberRounds, interviewType[String], offer(Bool)
+// params:  positionID(ObjectID), numberRounds, interviewType[String], offer(Bool)
 app.post('/addInterview', async(req: Request, res: Response) => {
   return await addInterview(req, res);
 });
 
 // end point to set an offer for an interview
 // params: interview(ObjectID), pay, bonus, otherComp
-app.post('/setOffer', async(req: Request, res: Response) => {
+app.put('/setOffer', async(req: Request, res: Response) => {
   return await setOffer(req, res);
 });
 
 // end point to update company
 // params: required: companyID, optional(must have one): companyName, headquarterLocation
-app.post('/updateCompany', async(req: Request, res: Response) => {
+app.put('/updateCompany', async(req: Request, res: Response) => {
   return await updateCompany(req, res);
-})
+});
 
+// params: requeired: optional(must have one )year, term(1 = Spring, 2 = summer, 3 = fall, 4 = winter), positionType, currentlyOpen(true or false)
+app.put('/updatePosition', async (req: Request, res: Response) => {
+  return await updatePosition(req, res);
+});
+
+// params: requeired: interviewID, optional(min one): numberRounds, interviewType
+app.put('/updateInterview', async (req: Request, res: Response) => {
+  return await updateInterview(req, res);
+});
 
 
 // listen on assigned port, or port 5000 if local
