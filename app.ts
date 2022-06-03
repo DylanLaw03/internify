@@ -11,7 +11,7 @@ app.use(express.json());
 
 
 //setup cors
-const allowedOrigins = ['https://internify-admin-panel.herokuapp.com/', 'localhost:3000']
+const allowedOrigins = ['https://internify-admin-panel.herokuapp.com/', 'https://localhost:3000']
 app.use(cors({
   origin: allowedOrigins
 }));
