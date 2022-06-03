@@ -1,7 +1,7 @@
-import { equal } from 'assert';
 import {Request, Response} from 'express';
+import mongoose, { Schema } from 'mongoose';
 import { IOffer, IPosition, IInterview, ICompany } from './company';
-import { companyModel, companySchema, interviewModel, positionModel } from './mongo';
+import { companyModel, interviewModel, positionModel } from './mongo';
 
 // endpoint to add an empty company, positions, interviews and offers inserted at other end points
 // requires companyName and headquarterLocation
@@ -340,3 +340,17 @@ export const deleteInterview = async(req: Request, res: Response) => {
     return res.status(200).send("Interview successfully deleted")
 }
 
+// getCompanies
+export const getCompanies = async(req: Request, res: Response) => {
+    let companies = await companyModel.find({});
+
+    return res.status(200).send(companies);
+}
+
+// params: companyID
+export const getPositions = async(req: Request, res: Response) => {
+
+    let positions = await positionModel.find({companyID: req.body.companyID})
+
+    return res.status(200).send(positions)
+}

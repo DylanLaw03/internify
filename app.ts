@@ -1,6 +1,6 @@
 import express, {Request, Response} from 'express';
 import mongoose from 'mongoose';
-import { createCompany, addPosition, addInterview, setOffer, updateCompany, updatePosition, updateInterview, deleteCompany, deletePosition, deleteInterview } from './core/company-endpoints';
+import { createCompany, addPosition, addInterview, setOffer, updateCompany, updatePosition, updateInterview, deleteCompany, deletePosition, deleteInterview, getCompanies, getPositions } from './core/company-endpoints';
 require("dotenv").config();
 
 
@@ -66,7 +66,15 @@ app.delete('/deleteInterview', async (req: Request, res: Response) => {
   return await deleteInterview(req, res);
 });
 
+// gets all companies
+app.get('/getCompanies', async(req: Request, res: Response) => {
+  return await getCompanies(req, res);
+});
 
+// gets positions with specified companyID
+app.post('/getPositions', async(req: Request, res: Response) => {
+  return await getPositions(req, res);
+});
 
 
 // listen on assigned port, or port 5000 if local
