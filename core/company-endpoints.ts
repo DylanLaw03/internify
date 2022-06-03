@@ -342,15 +342,42 @@ export const deleteInterview = async(req: Request, res: Response) => {
 
 // getCompanies
 export const getCompanies = async(req: Request, res: Response) => {
-    let companies = await companyModel.find({});
-
+    let companies;
+    try {
+        companies = await companyModel.find({});
+    }
+    catch (error) {
+        console.log(error);
+        return res.status(200).send("Error: Could not retrieve companies")
+    }
     return res.status(200).send(companies);
 }
 
 // params: companyID
 export const getPositions = async(req: Request, res: Response) => {
+    let positions;
 
-    let positions = await positionModel.find({companyID: req.body.companyID})
-
+    try {
+    positions = await positionModel.find({companyID: req.body.companyID})
+    }
+    catch (error) {
+        console.log(error);
+        return res.status(400).send("Error: Could not retrieve positions")
+    }
     return res.status(200).send(positions)
+}
+
+// params: positionID
+export const getInterviews = async(req: Request, res: Response) => {
+    let interviews;
+
+    try {
+        interviews = await interviewModel.find({positionID: req.body.positionID});
+    }
+    catch (error) {
+        console.log(error);
+        return res.status(400).send("Error: Could not retrieve interviews")
+    }
+
+    return res.status(200).send(interviews);
 }
