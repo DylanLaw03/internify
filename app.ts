@@ -11,9 +11,9 @@ app.use(express.json());
 
 
 //setup cors
-const allowedOrigins = ['https://internify-admin-panel.herokuapp.com/', 'https://localhost:3000']
+const allowedOrigins = ['https://internify-admin-panel.herokuapp.com', 'https://localhost:3000']
 app.use(cors({
-  origin: 'https://internify-admin-panel.herokuapp.com'
+  origin: allowedOrigins
 }));
 // connect to mongo db
 mongoose.connect(process.env.MONGO_URI!);
