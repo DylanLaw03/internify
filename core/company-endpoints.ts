@@ -378,6 +378,6 @@ export const getInterviews = async(req: Request, res: Response) => {
         console.log(error);
         return res.status(400).send("Error: Could not retrieve interviews")
     }
-
+    console.log(req.body.positionID);
     return res.status(200).send(interviews);
 }
